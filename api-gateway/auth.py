@@ -1,11 +1,16 @@
+import os
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 
-SECRET_KEY = "Hfnvbh11"
+from .repositories.user_repo import UserRepositoryDB
+from .db import get_db
+
+SECRET_KEY = os.getenv('SECRET')
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -18,29 +23,8 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-# Mocks
-fake_users_db = {
-    "user1": {
-        "username": "user1",
-        "hashed_password": hash_password("Alaska123")
-    }
-}
-
-
 def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
-
-
-def get_user(db, username):
-    return db.get(username)
-
-
-def authenticate_user(username: str, password: str):
-    user = get_user(fake_users_db, username)
-    print(username)
-    if not user or not verify_password(password, user["hashed_password"]):
-        return None
-    return user
 
 
 def create_access_token(data: dict, expires_delta=None):
@@ -50,15 +34,20 @@ def create_access_token(data: dict, expires_delta=None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db),
+):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if not username:
             raise HTTPException(status_code=401, detail="Invalid token")
-        user = get_user(fake_users_db, username)
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    user_repo = UserRepositoryDB(db)
+    user = user_repo.get_by_username(username)
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
