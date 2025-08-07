@@ -7,10 +7,10 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from .repositories.user_repo import UserRepositoryDB
 from .db import get_db
+from .repositories.user_repo import UserRepositoryDB
 
-SECRET_KEY = os.getenv('SECRET')
+SECRET_KEY = os.environ["SECRET"]
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -40,7 +40,7 @@ async def get_current_user(
 ):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        username: str = payload.get("sub", "")
         if not username:
             raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:

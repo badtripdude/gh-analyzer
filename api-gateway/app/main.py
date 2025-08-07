@@ -2,14 +2,15 @@ from datetime import timedelta
 from typing import Union
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from .models import User
 from . import schemas
-from .auth import create_access_token, get_current_user, hash_password, verify_password
+from .auth import (create_access_token, get_current_user, hash_password,
+                   verify_password)
 from .db import Base, engine, get_db
+from .models import User
 from .repositories.user_repo import UserRepositoryDB
 
 load_dotenv()
@@ -20,24 +21,23 @@ Base.metadata.create_all(bind=engine)
 
 def issue_token(username: str):
     token = create_access_token(
-        data={"sub": username},
-        expires_delta=timedelta(minutes=30)
+        data={"sub": username}, expires_delta=timedelta(minutes=30)
     )
     return {"access_token": token, "token_type": "bearer"}
 
 
 @app.post("/analyze")
-async def read_root():
+async def analyze():
     return {}
 
 
 @app.get("/status/{task_id}")
-async def read_item(task_id: int, q: Union[str, None] = None):
+async def get_status(task_id: int, q: Union[str, None] = None):
     return {"item_id": task_id, "q": q}
 
 
 @app.get("/report/{username}")
-async def read_item(username: str):
+async def get_report(username: str):
     return {"username": username}
 
 
@@ -53,11 +53,15 @@ async def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: Session = Depends(get_db)
+):
     repo = UserRepositoryDB(db)
     user = repo.get_by_username(form_data.username)
     if not user or not verify_password(form_data.password, user.password):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+        raise HTTPException(status_code=401,
+                            detail="Incorrect username or password")
 
     return issue_token(username=user.username)
 

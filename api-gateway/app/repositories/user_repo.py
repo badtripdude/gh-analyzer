@@ -1,10 +1,11 @@
 from typing import Optional
 
-from .. import schemas
-from .base import UserRepository
 from sqlalchemy.orm import Session
+
 from ..models import User
 from ..schemas import UserCreate
+from .base import UserRepository
+
 
 class UserRepositoryDB(UserRepository):
     def __init__(self, db: Session):
