@@ -1,0 +1,51 @@
+name: API Gateway CI
+
+on:
+  push:
+    branches: [ api-gateway ]
+    paths:
+      - 'api-gateway/**'
+      - '.github/workflows/ci-api-gateway.yml'
+  pull_request:
+    branches: [ api-gateway ]
+    paths:
+      - 'api-gateway/**'
+      - '.github/workflows/ci-api-gateway.yml'
+
+jobs:
+  api-gateway-ci:
+    name: Lint & Test api-gateway
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api-gateway
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Check formatting with Black
+        run: black --check app
+
+      - name: Lint with Flake8
+        run: flake8 app
+
+      - name: Check imports with isort
+        run: isort app --check-only
+
+      - name: Static type check with MyPy
+        run: mypy app
+
+      - name: Build Docker image
+        run: docker build -t api-gateway-test .

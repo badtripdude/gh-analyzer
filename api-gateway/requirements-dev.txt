@@ -1,0 +1,9 @@
+types-python-jose
+types-passlib
+pytest
+pytest-cov
+flake8
+flake8-black
+black
+isort
+mypy
