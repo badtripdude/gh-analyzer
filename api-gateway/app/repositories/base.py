@@ -1,5 +1,4 @@
 import abc
 
 
-class UserRepository(abc.ABC):
-    ...
+class UserRepository(abc.ABC): ...
