@@ -1,0 +1,29 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    env_file:
+      - .env.kafka
+    ports:
+      - "9092:9092"       # external
+    depends_on:
+      - zookeeper
+
+  topics-init:
+    image: bitnami/kafka:3.7
+    container_name: kafka-topics-init
+    depends_on:
+      - kafka
+    env_file:
+      - .env.kafka
+    volumes:
+      - ./scripts/init-topics.sh:/scripts/init-topics.sh:ro
+    entrypoint: ["/bin/bash", "/scripts/init-topics.sh"]
