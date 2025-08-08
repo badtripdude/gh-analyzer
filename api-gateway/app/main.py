@@ -1,18 +1,18 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Union
+from uuid import uuid4
 
-from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from . import schemas
+from . import kafka_producer, schemas
 from .auth import create_access_token, get_current_user, hash_password, verify_password
 from .db import Base, engine, get_db
 from .models import User
 from .repositories.user_repo import UserRepositoryDB
+from .schemas import AnalyzeRequest, AnalyzeResponse
 
-load_dotenv()
 app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
@@ -25,9 +25,29 @@ def issue_token(username: str):
     return {"access_token": token, "token_type": "bearer"}
 
 
-@app.post("/analyze")
-async def analyze():
-    return {}
+@app.post("/analyze", response_model=AnalyzeResponse)
+async def analyze(req: AnalyzeRequest, user=Depends(get_current_user)):
+    task_id = str(uuid4())
+
+    # Mock(grpc response)
+    preview = {
+        "username": req.username,
+        "repo_count": 10,
+        "total_stars": 10,
+        "languages": "python",
+    }
+
+    kafka_producer.send_event(
+        "analysis_requested",
+        {
+            "task_id": task_id,
+            "user_id": str(user.id),
+            "username": req.username,
+            "requested_at": datetime.utcnow().isoformat(),
+        },
+    )
+
+    return {"task_id": task_id, "status": "started", "preview": preview}
 
 
 @app.get("/status/{task_id}")

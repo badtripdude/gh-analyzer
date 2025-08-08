@@ -35,17 +35,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-      - name: Check formatting with Black
-        run: black --check app
 
-      - name: Lint with Flake8
-        run: flake8 app
-
-      - name: Check imports with isort
-        run: isort app --check-only
-
-      - name: Static type check with MyPy
-        run: mypy app
+      - name: Run pre-commit (lint & format check)
+        run: pre-commit run --all-files --config ../.pre-commit-config.yaml
 
       - name: Build Docker image
         run: docker build -t api-gateway-test .
