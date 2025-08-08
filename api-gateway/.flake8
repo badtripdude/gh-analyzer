@@ -4,3 +4,6 @@ extend-ignore = E203, W503, E701
 max-line-length = 88
 
 select = B,B950,E,F,W
+per-file-ignores =
+    app/auth.py: B008
+    app/main.py: B008
