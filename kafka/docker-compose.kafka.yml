@@ -6,6 +6,8 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
       - "2181:2181"
+    networks:
+      - my-shared-network
 
   kafka:
     image: bitnami/kafka:3.7
@@ -16,6 +18,8 @@ services:
       - "9092:9092"       # external
     depends_on:
       - zookeeper
+    networks:
+      - my-shared-network
 
   topics-init:
     image: bitnami/kafka:3.7
@@ -26,4 +30,10 @@ services:
       - .env.kafka
     volumes:
       - ./scripts/init-topics.sh:/scripts/init-topics.sh:ro
+    networks:
+      - my-shared-network
     entrypoint: ["/bin/bash", "/scripts/init-topics.sh"]
+
+networks:
+  my-shared-network:
+    external: true
